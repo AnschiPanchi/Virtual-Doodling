@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ansh's Gesture Doodle</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="landing-page" class="landing">
+        <h1>Hand Doodle Aid</h1>
+        <p>A touchless digital whiteboard for education and notes.</p>
+        <button id="start-btn">Start Doodling</button>
+    </div>
+
+    <div id="doodle-interface" class="hidden">
+    <div id="loading-overlay" class="overlay">
+        <div class="spinner"></div>
+        <p>Initializing AI Model...</p>
+    </div>
+
+   <div class="instructions">
+        <select id="shape-select" class="dropdown">
+            <option value="line">Free Draw</option>
+            <option value="circle">Circle</option>
+            <option value="square">Square</option>
+        </select>
+        <span class="step">1. Select Color/Shape</span>
+        <span class="step">2. Point to Draw</span>
+        <span class="step">3. Fist to Erase</span>
+   </div>
+
+    <div class="container">
+        <video id="video_input" style="display:none;"></video>
+        <canvas id="canvas_output"></canvas>
+    </div>
+
+    <div class="controls">
+        <button id="clearBtn">Clear All</button>
+        <button id="saveBtn" class="blue-btn">Save Image</button>
+        <button id="stop-btn" class="red-btn">Exit</button>
+    </div>
+</div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
