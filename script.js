@@ -21,20 +21,18 @@ let currentColor = "#00FF00";
 let currentShape = "line"; 
 let hoverTimer = 0;
 let stream = null; 
+let buttons = []; // Dynamic buttons
 
 // Constants
 const smoothingFactor = 0.35;
 const hoverThreshold = 30; 
 const eraserSize = 80;
 
-const buttons = [
-    { name: 'Green', color: '#00FF00', x: 100, y: 60, radius: 30 },
-    { name: 'Blue',  color: '#0000FF', x: 200, y: 60, radius: 30 },
-    { name: 'Red',   color: '#FF0000', x: 300, y: 60, radius: 30 }
-];
-
 const hands = new Hands({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    locateFile: (file) => {
+        // Use an explicit version to prevent binary mismatches
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}`;
+    }
 });
 
 hands.setOptions({
@@ -59,9 +57,7 @@ stopBtn.onclick = () => {
     }
     doodleInterface.classList.add('hidden');
     landingPage.classList.remove('hidden');
-    if (loadingOverlay) {
-        loadingOverlay.classList.remove('hidden');
-    }
+    if (loadingOverlay) loadingOverlay.classList.remove('hidden');
     dctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
     initialized = false;
 };
@@ -96,30 +92,40 @@ async function runDetection() {
     requestAnimationFrame(runDetection);
 }
 
-// 4. Processing Results
 function onResults(results) {
     if (loadingOverlay && !loadingOverlay.classList.contains('hidden')) {
         loadingOverlay.classList.add('hidden');
     }
     
+    // SAFETY CHECK: Ensure video has dimensions before initializing
     if (!initialized && videoElement.videoWidth > 0) {
-        // High-Resolution Sync: Use raw video data for canvas size
-        canvasElement.width = drawingCanvas.width = videoElement.videoWidth;
-        canvasElement.height = drawingCanvas.height = videoElement.videoHeight;
+        const streamWidth = videoElement.videoWidth;
+        const streamHeight = videoElement.videoHeight;
         
-        // Ensure CSS doesn't override the height incorrectly
-        canvasElement.style.height = "100%";
+        // Match internal resolution to camera feed
+        canvasElement.width = drawingCanvas.width = streamWidth;
+        canvasElement.height = drawingCanvas.height = streamHeight;
         
+        // Dynamic Button Positioning based on current stream size
+        const spacing = streamWidth / 4;
+        buttons = [
+            { name: 'Green', color: '#00FF00', x: spacing,     y: 60, radius: 35 },
+            { name: 'Blue',  color: '#0000FF', x: spacing * 2, y: 60, radius: 35 },
+            { name: 'Red',   color: '#FF0000', x: spacing * 3, y: 60, radius: 35 }
+        ];
+
         dctx.lineWidth = 6;
         dctx.lineCap = 'round';
         dctx.lineJoin = 'round';
         initialized = true;
     }
 
+    if (!initialized) return; // Wait for initialization to finish
+
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     
-    // Draw at 1:1 resolution for maximum clarity
+    // Draw Camera Feed
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
@@ -132,7 +138,6 @@ function onResults(results) {
     canvasCtx.restore();
 }
 
-// 5. Gesture and Button Logic
 function handleGestures(landmarks) {
     const thumbTip = landmarks[4];
     const indexTip = landmarks[8];
@@ -196,7 +201,6 @@ function handleGestures(landmarks) {
             startX = smoothX;
             startY = smoothY;
         }
-
         if (currentShape === "line") {
             dctx.strokeStyle = currentColor;
             if (lastX !== 0) {
@@ -219,10 +223,6 @@ function handleGestures(landmarks) {
             canvasCtx.setLineDash([]);
         }
         lastX = smoothX; lastY = smoothY;
-        canvasCtx.fillStyle = "white";
-        canvasCtx.beginPath();
-        canvasCtx.arc(smoothX, smoothY, 8, 0, 2 * Math.PI);
-        canvasCtx.fill();
     } else {
         if (isDrawing) {
             if (currentShape !== "line") {
@@ -239,10 +239,6 @@ function handleGestures(landmarks) {
             isDrawing = false;
         }
         lastX = 0;
-        canvasCtx.fillStyle = currentColor;
-        canvasCtx.beginPath();
-        canvasCtx.arc(smoothX, smoothY, 10, 0, 2 * Math.PI);
-        canvasCtx.fill();
     }
 }
 

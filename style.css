@@ -181,23 +181,28 @@ button {
 /* --- MOBILE RESPONSIVE (EXCEPTION ONLY) --- */
 /* --- RESPONSIVE DESIGN CHANGES ONLY --- */
 /* --- RESPONSIVE DESIGN CHANGES ONLY --- */
+/* --- RESPONSIVE DESIGN: VERTICAL EXPANSION --- */
 @media (max-width: 768px) {
     .container {
-        width: 98vw;      /* Use almost full width of the phone */
-        height: auto;      /* CRITICAL: Let height be determined by the video aspect */
-        min-height: 300px; /* Prevents it from collapsing before camera loads */
-        aspect-ratio: auto;/* Remove the laptop 16:9 force */
-        margin: 5px auto;
-        border-width: 2px;
+        width: 100vw;      /* Full width for easier button access */
+        height: auto;
+        max-height: 80vh;  /* Give maximum vertical room */
+        margin: 0;         /* Remove margins to save space */
+        border-radius: 0;  /* Flush to edges on mobile */
+    }
+
+    /* Ensure the canvas is not pushed down by headers */
+    #doodle-interface {
+        justify-content: flex-start; 
     }
 
     #canvas_output {
         width: 100%;
-        height: auto;      /* Ensure the canvas doesn't stretch pixels */
-        object-fit: contain;
+        height: 100%;      /* Fill the new taller container */
+        object-fit: cover; /* Ensure no black bars at the top or bottom */
     }
 
-    /* Stack buttons for better thumb-reach and to prevent UI overlap */
+    /* Keep controls compact to leave more space for the video */
     .controls {
         flex-wrap: wrap; 
         gap: 8px;
@@ -205,15 +210,17 @@ button {
     }
 
     .controls button {
-        flex: 1 1 45%;    /* Two buttons side-by-side */
-        padding: 15px 5px;
+        flex: 1 1 45%;    /* Side-by-side buttons */
+        padding: 12px 5px;
+        font-size: 0.85rem;
     }
 
     #stop-btn {
-        flex: 1 1 100%;   /* Exit button full width */
+        flex: 1 1 100%;   /* Exit button at the bottom */
     }
 
+    /* Hide instructions to maximize vertical space for the camera */
     .instructions {
-        display: none;    /* Hide instructions on mobile to maximize camera space */
+        display: none; 
     }
 }
