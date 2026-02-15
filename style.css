@@ -1,7 +1,31 @@
-/* Transition and Layout */
+/* --- CSS Variables for Easy Maintenance --- */
+:root {
+    --primary-green: #00FF00;
+    --bg-dark: #1a1a1a;
+    --bg-black: #000000;
+    --text-gray: #888;
+    --accent-blue: #3498db;
+    --accent-red: #e74c3c;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+}
+
+/* --- Global Resets --- */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-dark);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: white;
+    overflow: hidden; 
+}
+
 .hidden { display: none !important; }
 
+/* --- Landing Page --- */
 .landing {
+    width: 100vw;
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -10,108 +34,32 @@
     text-align: center;
     background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
 }
-.instructions {
-    margin-top: 15px;
-    display: flex;
-    gap: 20px;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 10px 20px;
-    border-radius: 30px;
-    border: 1px solid #333;
-    font-size: 0.9rem;
-    color: #00FF00; /* Green theme */
-}
-.instructions b { color: white; }
 
-.landing h1 { font-size: 3rem; color: #00FF00; margin-bottom: 10px; }
-.landing p { color: #888; margin-bottom: 30px; }
+.landing h1 { 
+    font-size: clamp(2rem, 8vw, 4rem);
+    color: var(--primary-green); 
+    margin-bottom: 10px; 
+}
+
+.landing p { color: var(--text-gray); margin-bottom: 30px; padding: 0 20px; }
 
 #start-btn {
-    padding: 15px 40px;
+    padding: 15px 50px;
     font-size: 1.2rem;
-    background: #00FF00;
-    border-radius: 50px;
-}
-
-/* Color variations for buttons */
-.blue-btn { background: #3498db !important; color: white; }
-.red-btn { background: #e74c3c !important; color: white; }
-/* Ensure the body takes up the full viewport */
-body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background: #1a1a1a;
-    overflow: hidden; /* Prevent unwanted scrollbars */
-}
-
-.hidden { display: none !important; }
-
-/* Landing Page Styling */
-.landing {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-
-#start-btn {
-    padding: 15px 40px;
-    font-size: 1.2rem;
-    background: #00FF00;
+    background: var(--primary-green);
     border: none;
     border-radius: 50px;
     cursor: pointer;
     font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-/* Doodle Interface Styling */
-.container {
-    position: relative;
-    width: 800px;
-    max-width: 90vw;
-    aspect-ratio: 16 / 9;
-    margin: 20px auto;
-    border: 4px solid #333;
-    border-radius: 12px;
-    background: #000;
-    transform: rotateY(180deg);
-}
- #video_input {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* This prevents the feed from looking stretched */
-}
-#canvas_output {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: contain; /* Prevents stretching */
+#start-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
 }
 
-.controls {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    padding-bottom: 30px;
-}
-
-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-#clearBtn { background: #eee; }
-#saveBtn { background: #3498db; color: white; }
-#stop-btn { background: #e74c3c; color: white; }
-
+/* --- Doodle Interface --- */
 #doodle-interface {
     width: 100vw;
     height: 100vh;
@@ -120,19 +68,96 @@ button {
     align-items: center;
 }
 
+.instructions {
+    margin: 10px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: var(--glass-bg);
+    padding: 8px 15px;
+    border-radius: 30px;
+    border: 1px solid #333;
+    font-size: 0.85rem;
+    color: var(--primary-green);
+    justify-content: center;
+    align-items: center;
+}
+
 .step {
+    padding: 0 8px;
     border-right: 1px solid #444;
-    padding-right: 20px;
 }
 .step:last-child { border-right: none; }
 
-/* Loading Overlay Styling */
+.dropdown {
+    background: #333;
+    color: var(--primary-green);
+    border: 1px solid var(--primary-green);
+    border-radius: 50px;
+    padding: 4px 12px;
+    cursor: pointer;
+}
+
+/* --- LAPTOP DESIGN (BASE) --- */
+.container {
+    position: relative;
+    width: 800px;         /* Keeps your preferred laptop width */
+    max-width: 95vw;
+    margin: 15px auto;
+    border: 4px solid #333;
+    border-radius: 12px;
+    background: #000;
+    transform: rotateY(180deg); 
+    overflow: hidden;
+    display: flex;
+    
+    /* FIX: Allow vertical growth to cover space */
+    height: auto;         
+    min-height: 450px;   /* Standard 16:9 height for 800px width */
+    max-height: 85vh;    
+}
+#canvas_output {
+    width: 100%;
+    height: auto;        /* Let height follow the camera's natural ratio */
+    display: block;
+    object-fit: contain; /* Keeps your image intact and undistorted */
+}
+#video_input, #canvas_output {
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* CHANGE: Cover ensures the image fills the entire container */
+    object-fit: cover; 
+}
+/* --- Controls --- */
+.controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    padding: 20px;
+    width: 100%;
+}
+
+button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: filter 0.2s;
+}
+
+#clearBtn { background: #eee; color: #333; }
+.blue-btn { background: var(--accent-blue) !important; color: white; }
+.red-btn { background: var(--accent-red) !important; color: white; }
+
+/* --- Loading Overlay --- */
 .overlay {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(15px);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -142,24 +167,53 @@ button {
 
 .spinner {
     width: 50px; height: 50px;
-    border: 5px solid #333;
-    border-top: 5px solid #00FF00; /* Green theme */
+    border: 5px solid #222;
+    border-top: 5px solid var(--primary-green);
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 20px;
-}
-.dropdown {
-    background: #333;
-    color: #00FF00;
-    border: 1px solid #00FF00;
-    border-radius: 5px;
-    padding: 5px;
-    margin-right: 15px;
-    cursor: pointer;
-    font-family: inherit;
 }
 
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* --- MOBILE RESPONSIVE (EXCEPTION ONLY) --- */
+/* --- RESPONSIVE DESIGN CHANGES ONLY --- */
+/* --- RESPONSIVE DESIGN CHANGES ONLY --- */
+@media (max-width: 768px) {
+    .container {
+        width: 98vw;      /* Use almost full width of the phone */
+        height: auto;      /* CRITICAL: Let height be determined by the video aspect */
+        min-height: 300px; /* Prevents it from collapsing before camera loads */
+        aspect-ratio: auto;/* Remove the laptop 16:9 force */
+        margin: 5px auto;
+        border-width: 2px;
+    }
+
+    #canvas_output {
+        width: 100%;
+        height: auto;      /* Ensure the canvas doesn't stretch pixels */
+        object-fit: contain;
+    }
+
+    /* Stack buttons for better thumb-reach and to prevent UI overlap */
+    .controls {
+        flex-wrap: wrap; 
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .controls button {
+        flex: 1 1 45%;    /* Two buttons side-by-side */
+        padding: 15px 5px;
+    }
+
+    #stop-btn {
+        flex: 1 1 100%;   /* Exit button full width */
+    }
+
+    .instructions {
+        display: none;    /* Hide instructions on mobile to maximize camera space */
+    }
 }

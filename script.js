@@ -25,7 +25,7 @@ let stream = null;
 // Constants
 const smoothingFactor = 0.35;
 const hoverThreshold = 30; 
-const eraserSize = 80; // Updated larger eraser size
+const eraserSize = 80;
 
 const buttons = [
     { name: 'Green', color: '#00FF00', x: 100, y: 60, radius: 30 },
@@ -33,7 +33,6 @@ const buttons = [
     { name: 'Red',   color: '#FF0000', x: 300, y: 60, radius: 30 }
 ];
 
-// 1. Initialize MediaPipe Hands
 const hands = new Hands({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
@@ -73,7 +72,11 @@ shapeSelect.onchange = (e) => { currentShape = e.target.value; };
 async function startApp() {
     try {
         stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { width: 1280, height: 720 } 
+            video: { 
+                width: { ideal: 1280 }, 
+                height: { ideal: 720 },
+                facingMode: "user" 
+            } 
         });
         videoElement.srcObject = stream;
         
@@ -82,8 +85,7 @@ async function startApp() {
             runDetection();
         };
     } catch (err) {
-        console.error("Camera Error:", err);
-        alert("Camera blocked! Please allow access to use the Doodle Aid.");
+        alert("Camera blocked! Please allow access.");
     }
 }
 
@@ -99,10 +101,14 @@ function onResults(results) {
     if (loadingOverlay && !loadingOverlay.classList.contains('hidden')) {
         loadingOverlay.classList.add('hidden');
     }
+    
     if (!initialized && videoElement.videoWidth > 0) {
-        // Match drawing resolution to display size
-        canvasElement.width = drawingCanvas.width = canvasElement.clientWidth;
-        canvasElement.height = drawingCanvas.height = canvasElement.clientHeight;
+        // High-Resolution Sync: Use raw video data for canvas size
+        canvasElement.width = drawingCanvas.width = videoElement.videoWidth;
+        canvasElement.height = drawingCanvas.height = videoElement.videoHeight;
+        
+        // Ensure CSS doesn't override the height incorrectly
+        canvasElement.style.height = "100%";
         
         dctx.lineWidth = 6;
         dctx.lineCap = 'round';
@@ -113,7 +119,7 @@ function onResults(results) {
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     
-    // Draw Camera Feed
+    // Draw at 1:1 resolution for maximum clarity
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
@@ -122,7 +128,6 @@ function onResults(results) {
         }
     }
     
-    // Overlay the drawing layer
     canvasCtx.drawImage(drawingCanvas, 0, 0);
     canvasCtx.restore();
 }
@@ -138,11 +143,10 @@ function handleGestures(landmarks) {
     const targetX = indexTip.x * canvasElement.width;
     const targetY = indexTip.y * canvasElement.height;
 
-    // Smoothing (Lerp)
     smoothX += (targetX - smoothX) * smoothingFactor;
     smoothY += (targetY - smoothY) * smoothingFactor;
 
-    // --- A. VIRTUAL BUTTONS ---
+    // Hover Buttons
     let isHovering = false;
     buttons.forEach(btn => {
         canvasCtx.beginPath();
@@ -152,53 +156,41 @@ function handleGestures(landmarks) {
         canvasCtx.fill();
         canvasCtx.globalAlpha = 1.0;
 
-        const dist = Math.hypot(targetX - btn.x, targetY - btn.y);
-        if (dist < btn.radius) {
+        if (Math.hypot(targetX - btn.x, targetY - btn.y) < btn.radius) {
             isHovering = true;
             hoverTimer++;
-            
-            // Loading Ring
             canvasCtx.beginPath();
             canvasCtx.strokeStyle = "white";
             canvasCtx.lineWidth = 4;
             canvasCtx.arc(btn.x, btn.y, btn.radius + 5, 0, (hoverTimer / hoverThreshold) * Math.PI * 2);
             canvasCtx.stroke();
-
-            if (hoverTimer >= hoverThreshold) {
-                currentColor = btn.color;
-                hoverTimer = 0;
-            }
+            if (hoverTimer >= hoverThreshold) { currentColor = btn.color; hoverTimer = 0; }
         }
     });
     if (!isHovering) hoverTimer = 0;
 
-    // --- B. GESTURE DETECTION ---
+    // Gesture Logic
     const pinchDist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
     const isOpenPalm = (middleTip.y < landmarks[10].y) && 
                        (ringTip.y < landmarks[14].y) && 
                        (pinkyTip.y < landmarks[18].y);
 
-    // --- C. ACTIONS ---
     if (isOpenPalm) {
-        // Eraser Visual (Red Circle)
         canvasCtx.beginPath();
         canvasCtx.strokeStyle = "rgba(255, 0, 0, 0.7)";
         canvasCtx.lineWidth = 4;
         canvasCtx.arc(smoothX, smoothY, eraserSize, 0, 2 * Math.PI);
         canvasCtx.stroke();
 
-        // Erase Logic
         dctx.globalCompositeOperation = 'destination-out';
         dctx.beginPath();
         dctx.arc(smoothX, smoothY, eraserSize, 0, Math.PI * 2);
         dctx.fill();
         dctx.globalCompositeOperation = 'source-over';
-        
         lastX = 0;
         isDrawing = false;
     } 
     else if (pinchDist < 0.08) {
-        // Start Drawing Mode
         if (!isDrawing) {
             isDrawing = true;
             startX = smoothX;
@@ -206,7 +198,6 @@ function handleGestures(landmarks) {
         }
 
         if (currentShape === "line") {
-            // Free Draw Logic
             dctx.strokeStyle = currentColor;
             if (lastX !== 0) {
                 dctx.beginPath();
@@ -215,7 +206,6 @@ function handleGestures(landmarks) {
                 dctx.stroke();
             }
         } else {
-            // Shape Preview (Dotted Lines)
             canvasCtx.beginPath();
             canvasCtx.strokeStyle = currentColor;
             canvasCtx.setLineDash([5, 5]);
@@ -229,14 +219,11 @@ function handleGestures(landmarks) {
             canvasCtx.setLineDash([]);
         }
         lastX = smoothX; lastY = smoothY;
-
-        // Visual Pointer
         canvasCtx.fillStyle = "white";
         canvasCtx.beginPath();
         canvasCtx.arc(smoothX, smoothY, 8, 0, 2 * Math.PI);
         canvasCtx.fill();
     } else {
-        // Pinch Released: Finalize Shape stamping
         if (isDrawing) {
             if (currentShape !== "line") {
                 dctx.strokeStyle = currentColor;
@@ -252,8 +239,6 @@ function handleGestures(landmarks) {
             isDrawing = false;
         }
         lastX = 0;
-        
-        // Idle Cursor
         canvasCtx.fillStyle = currentColor;
         canvasCtx.beginPath();
         canvasCtx.arc(smoothX, smoothY, 10, 0, 2 * Math.PI);
@@ -261,13 +246,10 @@ function handleGestures(landmarks) {
     }
 }
 
-// 6. UI Controls
 document.getElementById('clearBtn').onclick = () => dctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-
 document.getElementById('saveBtn').onclick = () => {
     const link = document.createElement('a');
     link.download = 'ansh-doodle.png';
-    // Combine layers for the final image
     link.href = canvasElement.toDataURL();
     link.click();
 };
